@@ -10,6 +10,7 @@
 
 require "bundler/inline"
 
+# Include required gems
 gemfile do
   source "https://rubygems.org"
   gem "activerecord", require: "active_record"
@@ -20,12 +21,16 @@ gemfile do
   gem "rspec", require: true
 end
 
+# Ensure logs go to STDOUT
 ActiveRecord::Base.logger = Logger.new($stdout)
+
+# Use in-memory sqlite 
 ActiveRecord::Base.establish_connection(
   adapter: "sqlite3",
   database: ":memory:"
 )
 
+# Define a `users` table with only necessary columns from production
 ActiveRecord::Schema.define do
   create_table :users do |t|
     t.string :first_name
@@ -34,6 +39,7 @@ ActiveRecord::Schema.define do
   end
 end
 
+# METHOD UNDER TEST!
 class User < ActiveRecord::Base
   def split_names!
     return self if !last_name.nil?
@@ -45,13 +51,15 @@ class User < ActiveRecord::Base
   end
 end
 
+# Create a "random" distribution of Users with a full name in the first_name column
+# and first and last name in their respective columns; mimicking production data
 users = Array.new(100) do
   name = Faker::Name.name
   [{first_name: name, last_name: nil}, {first_name: name[0], last_name: name[1]}].sample
 end
 User.insert_all(users)
 
-
+# Test to be run by removing the binding below and invocking `$ rspec`
 RSpec.describe User do
   describe "#split_names!" do
     it "splits the first_name into first_name and last_name" do
@@ -64,4 +72,5 @@ RSpec.describe User do
   end
 end
 
+# Breakpoint to drop into this file with all of the context loaded
 binding.pry
